@@ -4,7 +4,7 @@ const app = express();
 const PORT = 4000;
 
 app.get("/", (req, res) => {
-  res.send("CI/CD Pipeline Running 🚀");
+  res.send("CI/CD pipeline webhook trigger is successfull, Great tokesh 🚀");
 });
 
 app.get("/users", (req, res) => {

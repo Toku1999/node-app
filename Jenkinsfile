@@ -19,6 +19,27 @@ pipeline {
                 sh 'docker build -t $IMAGE_NAME:${BUILD_NUMBER} .'
             }
         }
+        stage('Test (Docker)') {
+            steps {
+                sh '''
+                echo "Starting container for testing..."
+
+                docker rm -f test-container || true
+                docker run -d -p 4001:4000 --name test-container $IMAGE_NAME:${BUILD_NUMBER}
+
+                echo "Waiting for app to start..."
+                sleep 5
+
+                echo "Running API test..."
+                curl -f http://localhost:4001 || exit 1
+
+                echo "Stopping test container..."
+                docker rm -f test-container
+
+                echo "Test passed ✅"
+                '''
+            }
+        }
 
         stage('Login to DockerHub') {
             steps {

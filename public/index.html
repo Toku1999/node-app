@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3 Tier App</title>
+</head>
+<body>
+    <h1>🚀 User App</h1>
+
+    <input id="name" placeholder="Name">
+    <input id="email" placeholder="Email">
+    <button onclick="addUser()">Add User</button>
+
+    <h2>Users:</h2>
+    <ul id="users"></ul>
+
+<script>
+async function addUser() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+
+    await fetch("/api/users", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({name, email})
+    });
+
+    loadUsers();
+}
+
+async function loadUsers() {
+    const res = await fetch("/api/users");
+    const data = await res.json();
+
+    const list = document.getElementById("users");
+    list.innerHTML = "";
+
+    data.forEach(user => {
+        const li = document.createElement("li");
+        li.innerText = user.name + " - " + user.email;
+        list.appendChild(li);
+    });
+}
+
+loadUsers();
+</script>
+</body>
+</html>

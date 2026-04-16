@@ -10,9 +10,13 @@ app.use(express.static("public"));
 
 const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err));
+if (MONGO_URI) {
+    mongoose.connect(MONGO_URI)
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log(err));
+} else {
+    console.log("MongoDB not configured, running without DB");
+}
 
 // Routes
 const userRoutes = require("./routes/userRoutes");
@@ -23,6 +27,6 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-app.listen(4000, () => {
+app.listen(4000, '0.0.0.0', () => {
     console.log("Server running on port 4000");
 });

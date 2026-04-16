@@ -1,19 +1,28 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const path = require("path");
+
 const app = express();
 
-const PORT = 4000;
+app.use(bodyParser.json());
+app.use(express.static("public"));
 
+const MONGO_URI = process.env.MONGO_URI;
+
+mongoose.connect(MONGO_URI)
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log(err));
+
+// Routes
+const userRoutes = require("./routes/userRoutes");
+app.use("/api/users", userRoutes);
+
+// Frontend
 app.get("/", (req, res) => {
-  res.send("CI/CD pipeline webhook trigger is successfull, Great tokesh, you are very close to your goal 🚀");
+    res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-app.get("/users", (req, res) => {
-  res.json([
-    { id: 1, name: "Tokesh" },
-    { id: 2, role: "DevOps Engineer" }
-  ]);
-});
-
-app.listen(PORT, () => {
-  console.log(`Running on port ${PORT}`);
+app.listen(4000, () => {
+    console.log("Server running on port 4000");
 });

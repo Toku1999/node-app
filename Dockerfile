@@ -1,17 +1,23 @@
-# Build stage
-FROM node:18-alpine as build
+# -------- STAGE 1: BUILD --------
+FROM node:18 AS builder
 
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install --production
+RUN npm install
 
 COPY . .
 
-# Final stage
+# -------- STAGE 2: PRODUCTION --------
 FROM node:18-alpine
 
 WORKDIR /app
-COPY --from=build /app /app
+
+# Copy only required files from builder
+COPY --from=builder /app ./
+
+# Install only production dependencies
+RUN npm install --only=production
 
 EXPOSE 4000
 

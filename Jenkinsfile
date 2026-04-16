@@ -1,82 +1,85 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'nodejs'
+    }
+
     environment {
-        IMAGE_NAME = "node-app"
-        DOCKERHUB_REPO = "tokesh070/node-app"
+        DOCKER_IMAGE = "tokesh070/node-app"
+        DOCKER_TAG = "latest"
+        EC2_IP = "YOUR_EC2_IP"
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
 
-        stage('Clone Code') {
+        stage('Clone') {
             steps {
                 git branch: 'main', url: 'https://github.com/Toku1999/node-app.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Install') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:${BUILD_NUMBER} .'
-            }
-        }
-        stage('Test (Docker)') {
-            steps {
-                sh '''
-                echo "Starting container for testing..."
-
-                docker rm -f test-container || true
-                docker run -d -p 4001:4000 --name test-container $IMAGE_NAME:${BUILD_NUMBER}
-
-                echo "Waiting for app to start..."
-                sleep 5
-
-                echo "Running API test..."
-                curl -f http://localhost:4001 || exit 1
-
-                echo "Stopping test container..."
-                docker rm -f test-container
-
-                echo "Test passed ✅"
-                '''
+                sh 'npm install'
             }
         }
 
-        stage('Login to DockerHub') {
+        stage('Test') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-cred',
-                    usernameVariable: 'USERNAME',
-                    passwordVariable: 'PASSWORD'
-                )]) {
-                    sh '''
-                    echo $PASSWORD | docker login -u $USERNAME --password-stdin
-                    '''
+                sh 'npm test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh """
+                    npx sonar-scanner \
+                    -Dsonar.projectKey=node-app \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://YOUR_SONAR_IP:9000 \
+                    -Dsonar.login=$SONAR_TOKEN
+                    """
                 }
             }
         }
 
-        stage('Push to DockerHub') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                docker tag $IMAGE_NAME:${BUILD_NUMBER} $DOCKERHUB_REPO:${BUILD_NUMBER}
-                docker tag $IMAGE_NAME:${BUILD_NUMBER} $DOCKERHUB_REPO:latest
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
+            }
+        }
 
-                docker push $DOCKERHUB_REPO:${BUILD_NUMBER}
-                docker push $DOCKERHUB_REPO:latest
-                '''
+        stage('Login DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                docker rm -f node-container || true
-                docker pull $DOCKERHUB_REPO:${BUILD_NUMBER}
-                docker run -d -p 4000:4000 \
-                --name node-container \
-                --restart always \
-                $DOCKERHUB_REPO:${BUILD_NUMBER}
-                '''
+                sshagent(['ec2-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP << EOF
+                    docker pull $DOCKER_IMAGE:$DOCKER_TAG
+                    docker stop node-app || true
+                    docker rm node-app || true
+                    docker run -d -p 4000:4000 \
+                    -e MONGO_URI="your-mongodb-uri" \
+                    --name node-app $DOCKER_IMAGE:$DOCKER_TAG
+                    EOF
+                    """
+                }
             }
         }
     }

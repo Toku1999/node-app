@@ -10,9 +10,9 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
         CONTAINER_NAME = "node-app"
 
-        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_TOKEN = credentials('SonarQube')
         MONGO_URI = credentials('mongo-uri')
-        EC2_IP = "YOUR_EC2_IP"
+        EC2_IP = "13.222.139.126"
     }
 
     stages {
@@ -37,12 +37,12 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar-server') {
+                withSonarQubeEnv('SonarQube') {
                     sh """
                     npx sonar-scanner \
                     -Dsonar.projectKey=node-app \
                     -Dsonar.sources=. \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
+                    -Dsonar.host.url=$http://13.222.139.126:9000 \
                     -Dsonar.login=$SONAR_TOKEN
                     """
                 }

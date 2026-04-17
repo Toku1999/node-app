@@ -12,7 +12,7 @@ pipeline {
 
         SONAR_TOKEN = credentials('SonarQube')
         MONGO_URI = credentials('mongo-uri')
-        EC2_IP = "13.222.139.126"
+        EC2_IP = "54.242.156.145"
     }
 
     stages {
@@ -38,13 +38,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh """
+                    sh '''
                     npx sonar-scanner \
                     -Dsonar.projectKey=node-app \
                     -Dsonar.sources=. \
-                    -Dsonar.host.url=http://13.222.139.126:9000 \
-                    -Dsonar.login=$SONAR_TOKEN
-                    """
+                    -Dsonar.exclusions=node_modules/** \
+                    -Dsonar.host.url=http://54.242.156.145:9000 \
+                    -Dsonar.token=$SONAR_TOKEN
+                    '''
                 }
             }
         }
@@ -96,6 +97,10 @@ pipeline {
         }
         failure {
             echo "❌ Pipeline failed! Check logs."
+        }
+        always {
+            sh 'docker system prune -af || true'
+            cleanWs()
         }
     }
 }

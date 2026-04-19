@@ -74,20 +74,20 @@ pipeline {
             }
         }
 
-       stage('Deploy to EC2') {
-        steps {
-            sh """
-            ssh -i /var/lib/jenkins/key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_IP << EOF
-            docker pull $IMAGE_NAME:$IMAGE_TAG
-            docker rm -f $CONTAINER_NAME || true
-            docker run -d -p 4000:4000 \\
-            -e MONGO_URI="$MONGO_URI" \\
-            --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG
-            EOF
-            """
+        stage('Deploy') {
+            steps {
+                sh '''
+                docker pull $IMAGE_NAME:$IMAGE_TAG
+        
+                docker rm -f $CONTAINER_NAME || true
+        
+                docker run -d -p 4000:4000 \
+                -e MONGO_URI="$MONGO_URI" \
+                --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG
+                '''
+            }
         }
     }
-}
 
     post {
         success {

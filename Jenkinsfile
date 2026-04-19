@@ -12,7 +12,7 @@ pipeline {
 
         SONAR_TOKEN = credentials('SonarQube')
         MONGO_URI = credentials('mongo-uri')
-        EC2_IP = "54.242.156.145"
+        EC2_IP = "13.218.244.130"
     }
 
     stages {
@@ -43,7 +43,7 @@ pipeline {
                     -Dsonar.projectKey=node-app \
                     -Dsonar.sources=. \
                     -Dsonar.exclusions=node_modules/** \
-                    -Dsonar.host.url=http://54.242.156.145:9000 \
+                    -Dsonar.host.url=http://13.218.244.130:9000 \
                     -Dsonar.token=$SONAR_TOKEN
                     '''
                 }

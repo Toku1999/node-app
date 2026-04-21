@@ -7,12 +7,12 @@ pipeline {
 
     environment {
         IMAGE_NAME = "tokesh070/node-app"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG = "latest"
         CONTAINER_NAME = "node-app"
 
         SONAR_TOKEN = credentials('SonarQube')
         MONGO_URI = credentials('mongo-uri')
-        EC2_IP = "13.218.244.130"
+        EC2_IP = "13.220.87.46"
     }
 
     stages {
@@ -43,7 +43,7 @@ pipeline {
                     -Dsonar.projectKey=node-app \
                     -Dsonar.sources=. \
                     -Dsonar.exclusions=node_modules/** \
-                    -Dsonar.host.url=http://13.218.244.130:9000 \
+                    -Dsonar.host.url=http://13.220.87.46:9000 \
                     -Dsonar.token=$SONAR_TOKEN
                     '''
                 }
@@ -74,16 +74,12 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
+        stage('deploy') {
+            steps{
                 sh '''
-                docker pull $IMAGE_NAME:$IMAGE_TAG
-        
-                docker rm -f $CONTAINER_NAME || true
-        
-                docker run -d -p 4000:4000 \
-                -e MONGO_URI="$MONGO_URI" \
-                --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG
+                echo "Deploying to Kubernetes..."
+                kubectl set image deployment/node-app node-app=$IMAGE_NAME:$IMAGE_TAG
+                kubectl rollout status deployment/node-app
                 '''
             }
         }

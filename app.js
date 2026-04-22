@@ -20,6 +20,6 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-app.listen(4000, "0.0.0.0", () => {
+app.listen(4000, () => {
     console.log("Server running on port 4000");
 });
